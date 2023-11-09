@@ -1,4 +1,4 @@
-package baseball.util;
+package baseball.constant;
 
 public class NumberConst {
     public static final int START_INCLUSIVE = 1;

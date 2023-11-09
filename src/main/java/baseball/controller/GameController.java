@@ -1,60 +1,52 @@
 package baseball.controller;
 
+import baseball.domain.AnswerBallNumberGenerator;
 import baseball.domain.BallNumbers;
-import baseball.domain.GameResult;
-import baseball.domain.RandomBallNumberGenerator;
+import baseball.domain.BaseballGame;
+import baseball.domain.GameStatus;
+import baseball.domain.dto.output.BallResult;
+import baseball.view.InputView;
 import baseball.view.OutputView;
 
-import static baseball.util.NumberConst.THREE_STRIKE;
+import static baseball.constant.NumberConst.THREE_STRIKE;
 
 public class GameController {
     private final OutputView outputView;
-    private final InputFormatter inputFormatter;
-    private final RandomBallNumberGenerator randomBallNumberGenerator;
+    private final InputView inputView;
+    private final AnswerBallNumberGenerator answerBallNumberGenerator;
 
-    public GameController(OutputView outputView, InputFormatter inputFormatter, RandomBallNumberGenerator randomBallNumberGenerator) {
+    public GameController(OutputView outputView, InputView inputView, AnswerBallNumberGenerator answerBallNumberGenerator) {
         this.outputView = outputView;
-        this.inputFormatter = inputFormatter;
-        this.randomBallNumberGenerator = randomBallNumberGenerator;
+        this.inputView = inputView;
+        this.answerBallNumberGenerator = answerBallNumberGenerator;
     }
 
     public void start() {
-        start(true);
+        outputView.printGameStartMsg();
+        do {
+            final BaseballGame game = createGame();
+            play(game);
+        } while (keepGame());
     }
 
-    public void start(boolean isFreshStart) {
-        printStartMsgIfFreshStart(isFreshStart);
-        BallNumbers answerBallNumbers = randomBallNumberGenerator.generateAnswerNumbers();
-        compareNumbers(answerBallNumbers);
-        restartOrNot();
+    private BaseballGame createGame() {
+        BallNumbers answerBallNumbers = answerBallNumberGenerator.generateAnswerNumbers();
+        return new BaseballGame(answerBallNumbers);
     }
 
-    private void restartOrNot() {
-        if (inputFormatter.wantRestart()) {
-            start(false);
-        }
+    private boolean keepGame() {
+        GameStatus gameStatus = inputView.replayGame();
+        return GameStatus.RESTART == gameStatus;
     }
 
-    private void printStartMsgIfFreshStart(boolean isFreshStart) {
-        if (isFreshStart) {
-            outputView.printGameStartMsg();
-        }
-    }
-
-    private void compareNumbers(BallNumbers answerBallNumbers) {
+    private void play(final BaseballGame game) {
         while (true) {
-            BallNumbers userBallNumbers = getUserBallNumbers();
-            GameResult gameResult = GameResult.of(answerBallNumbers, userBallNumbers);
-            outputView.printGameResult(gameResult);
-            if (gameResult.getStrikeCount() == THREE_STRIKE) {
-                outputView.printGameOverMsg();
+            BallNumbers userBallNumbers = inputView.getUserBallNumbers();
+            final BallResult result = game.referee(userBallNumbers);
+            outputView.printGameResult(result);
+            if (result.strikeCount() == THREE_STRIKE) {
                 break;
             }
         }
-    }
-
-    public BallNumbers getUserBallNumbers() {
-        outputView.inputNumberMsg();
-        return inputFormatter.createUserBallNumbers();
     }
 }

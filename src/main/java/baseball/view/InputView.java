@@ -1,20 +1,31 @@
 package baseball.view;
 
-import camp.nextstep.edu.missionutils.Console;
-
-import static baseball.util.MessageConst.STRING_INPUT_FORMAT_EXCEPTION;
+import baseball.domain.BallNumbers;
+import baseball.domain.GameStatus;
+import baseball.domain.dto.input.BallNumbersDto;
+import baseball.io.InputReader;
+import baseball.io.OutputWriter;
 
 public class InputView {
+    private final InputReader reader;
+    private final OutputWriter writer;
 
-    public String readLine() {
-        String input = Console.readLine().trim();
-        validateIfIsBlank(input);
-        return input;
+    public InputView(InputReader reader, OutputWriter writer) {
+        this.reader = reader;
+        this.writer = writer;
     }
 
-    private void validateIfIsBlank(String input) {
-        if (input == null || input.isEmpty()) {
-            throw new IllegalArgumentException(STRING_INPUT_FORMAT_EXCEPTION);
-        }
+    public BallNumbers getUserBallNumbers() {
+        writer.writeInputNumberMsg();
+        String ballNumbersStr = reader.readLine();
+        BallNumbersDto ballNumbersDto = new BallNumbersDto(ballNumbersStr);
+        return ballNumbersDto.toBallNumbers();
+    }
+
+    public GameStatus replayGame() {
+        writer.writeGameOverMsg();
+
+        String input = reader.readLine();
+        return GameStatus.from(input);
     }
 }
